@@ -1,0 +1,14 @@
+version: "3.3"
+services:
+    nodeserver:
+        container_name: ultron_nodeapp
+        build:
+            context: ./web
+        ports:
+            - "127.0.0.1:8000:8000"
+    nginx:
+        container_name: ultron_nginx
+        build:
+            context: ./nginx
+        ports:
+            - "8800:80"
