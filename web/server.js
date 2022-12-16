@@ -186,7 +186,7 @@ app.get('/robots.txt',(req,res)=>{
 });
 
 // 404 Page Not Found
-app.use(function(req,res){
+app.use((req,res)=>{
   res.status(404).render('404.ejs');
   console.log(req.method,res.statusCode,req.url); // added for log
 });

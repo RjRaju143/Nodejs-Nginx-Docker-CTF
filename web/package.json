@@ -19,11 +19,13 @@
     "fs": "^0.0.1-security",
     "hbs": "^4.2.0",
     "method-override": "^3.0.0",
-    "nodemon": "^2.0.15",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
     "path": "^0.12.7",
     "serve-index": "^1.9.1"
   },
-  "description": "ultron server"
+  "description": "ultron server",
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
 }
