@@ -77,7 +77,6 @@ app.get('/source',checkAuthenticated, (req, res) => {
 //   }
 // })
 
-
 // FileUploading
 app.use(fileUpload())
 app.post('/',async(req,res,next)=>{
@@ -126,8 +125,6 @@ app.get('/upload',checkAuthenticated, (req, res) => {
     });
   })
 });
-
-
 
 //
 app.get('/register', checkNotAuthenticated, (req, res) => {
@@ -196,7 +193,6 @@ const port = 8000;
 app.listen(port,()=>{
 	console.log(`local server listen on port ${port}`)
   console.log(`ReverseProxy listen on port 8800`)
-  console.log(`this is master branch...`)
 })
 
 
