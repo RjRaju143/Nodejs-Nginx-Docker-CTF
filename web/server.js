@@ -18,6 +18,10 @@ const methodOverride = require('method-override')
 
 const fs = require('fs')
 
+const morgan = require('morgan');
+
+app.use(morgan("dev"));
+
 // Configure view engine and set views folder
 app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'views'))
@@ -48,12 +52,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', checkAuthenticated, (req, res) => {
   res.render('index.ejs', { name: req.user.name })
-  console.log(req.method,res.statusCode,req.url); // added for log
+  // console.log(req.method,res.statusCode,req.url); // added for log
 })
 
 app.get('/login', checkNotAuthenticated, (req, res) => {
   res.render('login.ejs')
-  console.log(req.method,res.statusCode,req.url); // added for log
+  // console.log(req.method,res.statusCode,req.url); // added for log
 })
 app.post('/login', checkNotAuthenticated, passport.authenticate('local', {
   successRedirect: '/',
@@ -64,7 +68,7 @@ app.post('/login', checkNotAuthenticated, passport.authenticate('local', {
 // source path
 app.get('/source',checkAuthenticated, (req, res) => {
   res.render('source.ejs',{output: req.query.name});
-  console.log(req.method,res.statusCode,req.url,req.query.name); // added for log
+  // console.log(req.method,res.statusCode,req.url,req.query.name); // added for log
 })
 
 //REMOTE CODE EXECUTATION Bug :) ... 
@@ -84,8 +88,8 @@ app.post('/',async(req,res,next)=>{
     const file = req.files.mFiles  // SingleFileUpload
     const fileName = new Date().getTime().toString() + path.extname(file.name)
     const savePath = path.join(__dirname, 'upload', fileName)
-    //console.log(req.files)  // added for log..
-    console.table(req.files)  // added for log..
+    console.log(req.files)  // added for log..
+    // console.table(req.files)  // added for log..
     await file.mv(savePath)
     res.redirect('/')
   }
@@ -119,9 +123,9 @@ app.get('/upload',checkAuthenticated, (req, res) => {
         return console.log('Unable to scan directory: ' + err);
     }
     res.send(files)
-    console.log(req.method,res.statusCode,req.url); // added for log
+    // console.log(req.method,res.statusCode,req.url); // added for log
     files.forEach(function (file) {
-    console.log(req.method,res.statusCode,req.url,file); // added for log
+    // console.log(req.method,res.statusCode,req.url,file); // added for log
     });
   })
 });
@@ -129,7 +133,7 @@ app.get('/upload',checkAuthenticated, (req, res) => {
 //
 app.get('/register', checkNotAuthenticated, (req, res) => {
   res.render('register.ejs')
-  console.log(req.method,res.statusCode,req.url); // added for log
+  // console.log(req.method,res.statusCode,req.url); // added for log
 })
 
 app.post('/register', checkNotAuthenticated, async (req, res) => {
@@ -145,8 +149,8 @@ app.post('/register', checkNotAuthenticated, async (req, res) => {
   } catch {
     res.redirect('/register')
   }
-  //console.log(users) // added for log.. (it show's users details in console)
-  console.table(users) // added for log.. (it show's users details in console)
+  console.log(users) // added for log.. (it show's users details in console)
+  // console.table(users) // added for log.. (it show's users details in console)
 })
 
 // Orignal
@@ -160,7 +164,7 @@ app.delete('/logout', function(req, res, next) {
   req.logout(function(err) {
     if (err) { return next(err); }
     res.redirect('/');
-    console.log(req.method,res.statusCode,req.url); // added for log
+    // console.log(req.method,res.statusCode,req.url); // added for log
   });
 });
 
@@ -185,7 +189,7 @@ app.get('/robots.txt',(req,res)=>{
 // 404 Page Not Found
 app.use((req,res)=>{
   res.status(404).render('404.ejs');
-  console.log(req.method,res.statusCode,req.url); // added for log
+  // console.log(req.method,res.statusCode,req.url); // added for log
 });
 
 //listening
