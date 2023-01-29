@@ -1,0 +1,106 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="public/img/icon.png">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>
+   ULTRON
+  </title>
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+  <link href="/public/css/nucleo-svg.css" rel="stylesheet" />
+  <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
+  <link href="/public/css/nucleo-svg.css" rel="stylesheet" />
+  <link id="pagestyle" href="/public/css/soft-ui-dashboard.css?v=1.0.5" rel="stylesheet" />
+</head>
+<body class="">
+  <nav class="navbar navbar-expand-lg position-absolute top-0 z-index-3 w-100 shadow-none my-3 navbar-transparent mt-4">
+    <div class="container">
+      <a class="navbar-brand font-weight-bolder ms-lg-0 ms-3 text-white" href="/">
+        ULTRON
+      </a>
+      <button class="navbar-toggler shadow-none ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#navigation" aria-controls="navigation" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon mt-2">
+          <span class="navbar-toggler-bar bar1"></span>
+          <span class="navbar-toggler-bar bar2"></span>
+          <span class="navbar-toggler-bar bar3"></span>
+        </span>
+      </button>
+      <div class="collapse navbar-collapse" id="navigation">
+        <ul class="navbar-nav mx-auto ms-xl-auto me-xl-7">
+          <li class="nav-item">
+            <a class="nav-link me-2" href="/register">
+              <i class="fas fa-user-circle opacity-6  me-1"></i>
+              Register
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link me-2" href="/login">
+              <i class="fas fa-key opacity-6  me-1"></i>
+              Login
+            </a>
+          </li>
+        </ul>
+        <li class="nav-item d-flex align-items-center">
+        </li>
+        <ul class="navbar-nav d-lg-block d-none">
+          <li class="nav-item">
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <main class="main-content  mt-0">
+    <section>
+      <div class="page-header align-items-start min-vh-50 pt-5 pb-11 m-3 border-radius-lg" style="background-image: url('/public/img/ultron2.jpg');">
+        <span class="mask bg-gradient-dark opacity-6"></span>
+        <div class="container">
+          <div class="row justify-content-center">
+            <div class="col-lg-5 text-center mx-auto">
+              <h1 class="text-white mb-2 mt-5">Welcome!</h1>
+              <p class="text-lead text-white">I'm a peace-keeping program...<br>created to help the Avengers.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div class="row mt-lg-n10 mt-md-n11 mt-n10">
+          <div class="col-xl-4 col-lg-5 col-md-7 mx-auto">
+            <div class="card z-index-0">
+              <div class="card-header text-center pt-4" style="margin-bottom: -30px;">
+                <h5>Register</h5>
+              </div>
+                <div class="col-3 ms-auto px-1">
+                </div>
+                <div class="col-3 px-1">
+                </div>
+                <div class="col-3 me-auto px-1">
+                </div>
+                <div class="mt-2 position-relative text-center">
+              </div>
+              <div class="card-body">
+                <form action="/register" method="POST">
+                  <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="Name" aria-label="Name" name="name" required>
+                  </div>
+                  <div class="mb-3">
+                    <input type="email" class="form-control" placeholder="Email" aria-label="Email" name="email" required>
+                  </div>
+                  <div class="mb-3">
+                    <input type="password" class="form-control" placeholder="Password" aria-label="Password" name="password" required>
+                  </div>
+                  <div class="text-center">
+                  <button class="btn bg-gradient-dark w-100 my-4 mb-2">Register</button>
+                  </div>
+                  <p class="text-sm mt-3 mb-0">Already have an account? <a href="/login" class="text-dark font-weight-bolder">Login</a></p>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

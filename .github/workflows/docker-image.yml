@@ -1,0 +1,19 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "thmCtf" ]
+  pull_request:
+    branches: [ "thmCtf" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      run: docker-compose up -d
+#       run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
