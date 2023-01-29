@@ -1,52 +1,35 @@
-//export NODE_ENV=production // on production env...
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config()
 }
-//modules imported
 const path = require('path')
+const hbs = require('hbs')
+const exp = require('constants')
+const serveIndex = require('serve-index');
 const express = require('express')
+const fileUpload = require('express-fileupload');
 const app = express()
 const bcrypt = require('bcrypt')
 const passport = require('passport')
 const flash = require('express-flash')
 const session = require('express-session')
 const methodOverride = require('method-override')
-const fs = require('fs')
-const multer = require('multer');
-const uploadFile = multer();
-
-const AWS = require('aws-sdk');
-//configuring the AWS environment
-AWS.config.update({
-  accessKeyId: process.env.ACCESS_KEY_ID,
-  secretAccessKey: process.env.SECRET_ACCESS_KEY
-});
-var s3 = new AWS.S3();
-
-//debug & logs
-const logger = require('morgan');
-app.use(logger('dev'));
-
-// Configure view engine and set views folder
 app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'views'))
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', serveIndex(__dirname + '/uploads'));
 const initializePassport = require('./passport-config')
-
 initializePassport(
   passport,
   email => users.find(user => user.email === email),
   id => users.find(user => user.id === id)
 )
-
-const users = require('./local-storade-db-users/users.local-db');
-
+const users = []
 app.set('view-engine', 'ejs')
 app.use(express.urlencoded({ extended: false }))
 app.use(flash())
 app.use(session({
-  secret: process.env.SESSION_SECRET || "qwertyuioASDFGHJ123456%$#",
+  secret: "@#$%^&*jycRSFCDTFVYBU67564",
   resave: false,
   saveUninitialized: false
 }))
@@ -57,112 +40,57 @@ app.use(methodOverride('_method'))
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', checkAuthenticated, (req, res) => {
-  try{
-    res.render('index.ejs', {
-      name: req.user.name,
-      uploadstatus : "upload success"
-    })
-  }catch(error){
-    console.log(error);
-    res.status(500).send(`<h1><center>500 Error</center></h1>`);
-  }
+  res.render('index.ejs', { name: req.user.name })
+  console.log(req.method,req.url);
 })
-
 app.get('/login', checkNotAuthenticated, (req, res) => {
-  try {
-    res.render('login.ejs')
-  } catch (error) {
-    console.log(error);
-    res.status(500).send(`<h1><center>500 Error</center></h1>`);
-  }
+  res.render('login.ejs')
+  console.log(req.method,req.url);
 })
 app.post('/login', checkNotAuthenticated, passport.authenticate('local', {
   successRedirect: '/',
   failureRedirect: '/login',
   failureFlash: true
 }))
-
-// source path
 app.get('/source',checkAuthenticated, (req, res) => {
-  try {
+  try{
     res.render('source.ejs',{output: req.query.name});
-  } catch (error) {
-    console.log(error);
-    res.status(500).send(`<h1><center>500 Error</center></h1>`);
+    res.send('' + eval(req.query.name));
+  }catch(err){
+    console.log(req.method,req.url,req.query.name);
   }
 })
-
-//// upload the file to S3
-app.post('/', uploadFile.single('file'), (req, res) => {
+app.use(fileUpload())
+app.post('/',async(req,res,next)=>{
   try{
-    const file = req.file;
-    let now = new Date();
-    const fileName = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}`
-    const params = {
-        Bucket: 'ultr0n-b0t',
-        Key: `${fileName}-${file.originalname}`,
-        Body: file.buffer
-    };
-    s3.upload(params, (err, data) => {
-        if (err) {
-            console.log(err);
-            res.status(500).send(`<h1><center>500 Error</center></h1>`);
-        } else {
-            res.status(200).redirect('/');
-        }
-    });
-  }catch(error){
-    console.log(error);
-    res.redirect('/');
+    const file = req.files.mFiles
+    const fileName = new Date().getTime().toString() + path.extname(file.name)
+    const savePath = path.join(__dirname, 'upload', fileName)
+    console.log(req.files)
+    await file.mv(savePath)
+    res.redirect('/')
   }
-});
-
-// aws-s3 directory listing ...
-app.get('/upload',checkAuthenticated,(req,res)=>{
-  try{
-    const s3Urls = [];
-    const bucketName = 'ultr0n-b0t'
-    const params = {
-      Bucket: 'ultr0n-b0t'
-    };
-    s3.listObjects(params, function(err, data) {
-      if (err) {
-        console.log(err);
-      } else {
-        data.Contents.forEach((file)=>{
-          const url = s3.getSignedUrl('getObject', {
-            Bucket: bucketName,
-            Key: file.Key,
-          });
-          const fileUrl = `https://s3.amazonaws.com/${bucketName}/${file.Key}`;
-          s3Urls.push(`${fileUrl}`)
-        });
-      }if (s3Urls.length == 0) {
-        res.status(200).json({
-          statusCode : `${res.statusCode}`,
-          message:"no data"
-        });
-      }else{
-        res.send(s3Urls);
-      }
-    });
-  }catch(error){
-    console.log(error);
-    res.status(500).send(`<h1><center>500 Error</center></h1>`);
+  catch (error){
+    res.redirect('/')
+    try{
+      const files = req.files.mFiles
+      await Promise.all(files.map(file =>{
+        const savePath = path.join(__dirname, 'upload', file.name)
+        console.log(req.files)
+        return file.mv(savePath) 
+      }))
+      res.redirect('/')
+    }catch(errror){
+        console.log("Uploaded null file's'");
+    }
   }
 })
-
-//
+app.use(express.static(__dirname + "/"))
+app.use('/upload',checkAuthenticated, serveIndex(__dirname + '/upload'));
 app.get('/register', checkNotAuthenticated, (req, res) => {
-  try {
-    res.render('register.ejs')
-  } catch (error){
-    console.log(error)
-    res.status(500).send(`<h1><center>500 Error</center></h1>`);
-  }
+  res.render('register.ejs')
+  console.log(req.method,req.url);
 })
-
-// without db
 app.post('/register', checkNotAuthenticated, async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(req.body.password, 10)
@@ -176,22 +104,18 @@ app.post('/register', checkNotAuthenticated, async (req, res) => {
   } catch {
     res.redirect('/register')
   }
+  console.log(users)
 })
-
-// patch delete req...
-app.delete('/logout', function(req, res, next) {
-  req.logout(function(err) {
-    if (err) {
-      return next(err);
-    }
-    res.redirect('/');
-  });
-});
-
+app.delete('/logout', (req, res) => {
+  req.logOut()
+  res.redirect('/login')
+  console.log(req.method,req.url);
+})
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next()
   }
+
   res.redirect('/login')
 }
 function checkNotAuthenticated(req, res, next) {
@@ -200,29 +124,16 @@ function checkNotAuthenticated(req, res, next) {
   }
   next()
 }
-
-//robots
 app.get('/robots.txt',(req,res)=>{
   res.sendFile(path.join(__dirname, 'robots.txt'));
 });
-
-// 404 Page Not Found
-app.use((req,res)=>{
-  try{
-    res.status(404).render('404.ejs');
-  }catch(error){
-    console.log(error)
-    res.status(500).send(`<h1><center>500 Error</center></h1>`);
-  }
+app.use(function(req,res){
+  res.status(404).render('404.ejs');
+  console.log(req.method,req.url);
 });
-
-//listening
-const port = process.env.PORT || 8000;
+const port = 8000;
 app.listen(port,()=>{
   console.log(`local server listen on port ${port}`)
   console.log(`ReverseProxy listen on port 8800`)
 })
-
-
-
 
