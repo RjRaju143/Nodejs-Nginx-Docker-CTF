@@ -4,10 +4,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 //modules imported
 const path = require('path')
-const exp = require('constants')
-const serveIndex = require('serve-index');
 const express = require('express')
-const fileUpload = require('express-fileupload');
 const app = express()
 const bcrypt = require('bcrypt')
 const passport = require('passport')
@@ -15,6 +12,16 @@ const flash = require('express-flash')
 const session = require('express-session')
 const methodOverride = require('method-override')
 const fs = require('fs')
+const multer = require('multer');
+const uploadFile = multer();
+
+const AWS = require('aws-sdk');
+//configuring the AWS environment
+AWS.config.update({
+  accessKeyId: process.env.ACCESS_KEY_ID,
+  secretAccessKey: process.env.SECRET_ACCESS_KEY
+});
+var s3 = new AWS.S3();
 
 //debug & logs
 const logger = require('morgan');
@@ -25,7 +32,7 @@ app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'views'))
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-const initializePassport = require('./models/passport-config')
+const initializePassport = require('./passport-config')
 
 initializePassport(
   passport,
@@ -33,7 +40,7 @@ initializePassport(
   id => users.find(user => user.id === id)
 )
 
-const users = [];
+const users = require('./local-storade-db-users/users.local-db');
 
 app.set('view-engine', 'ejs')
 app.use(express.urlencoded({ extended: false }))
@@ -50,14 +57,24 @@ app.use(methodOverride('_method'))
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', checkAuthenticated, (req, res) => {
-  res.render('index.ejs', {
-    name: req.user.name,
-    uploadstatus : "upload success"
-  })
+  try{
+    res.render('index.ejs', {
+      name: req.user.name,
+      uploadstatus : "upload success"
+    })
+  }catch(error){
+    console.log(error);
+    res.status(500).send(`<h1><center>500 Error</center></h1>`);
+  }
 })
 
 app.get('/login', checkNotAuthenticated, (req, res) => {
-  res.render('login.ejs')
+  try {
+    res.render('login.ejs')
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(`<h1><center>500 Error</center></h1>`);
+  }
 })
 app.post('/login', checkNotAuthenticated, passport.authenticate('local', {
   successRedirect: '/',
@@ -65,90 +82,84 @@ app.post('/login', checkNotAuthenticated, passport.authenticate('local', {
   failureFlash: true
 }))
 
-//// source path
+// source path
 app.get('/source',checkAuthenticated, (req, res) => {
-  res.render('source.ejs',{output: req.query.name});
-  console.log(req.method,res.statusCode,req.url,req.query.name); // added for log
+  try {
+    res.render('source.ejs',{output: req.query.name});
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(`<h1><center>500 Error</center></h1>`);
+  }
 })
 
-//// file uploading ....
-app.use(fileUpload())
-app.post('/',async(req,res,next)=>{
-  function createFolder(){
-    const folderName = path.join(__dirname, 'upload')
-    try {
-        if (!fs.existsSync(folderName)) fs.mkdirSync(folderName);
-    }catch (err) {
-      console.error(err)
-    }
-  }
+//// upload the file to S3
+app.post('/', uploadFile.single('file'), (req, res) => {
   try{
-    createFolder()
-    const file = req.files.mFiles  // SingleFileUpload
+    const file = req.file;
     let now = new Date();
     const fileName = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}`
-    const savePath = path.join(__dirnamadded, 'upload', fileName + path.extname(file.name))
-    console.log(file)  // added for log..
-    await file.mv(savePath)
-    // res.redirect('/')
-    res.send(`<script>alert('file uploaded !..');window.location.href = "/";</script>`);
+    const params = {
+        Bucket: 'ultr0n-b0t',
+        Key: `${fileName}-${file.originalname}`,
+        Body: file.buffer
+    };
+    s3.upload(params, (err, data) => {
+        if (err) {
+            console.log(err);
+            res.status(500).send(`<h1><center>500 Error</center></h1>`);
+        } else {
+            res.status(200).redirect('/');
+        }
+    });
+  }catch(error){
+    console.log(error);
+    res.redirect('/');
   }
-  catch (error){
-    // res.redirect('/')
-    try{
-      createFolder()
-      const files = req.files.mFiles  // MultiFileUpload
-      await Promise.all(files.map(file =>{
-        const savePath = path.join(__dirname, 'upload', file.name)
-        console.log(file); // added for log
-        return file.mv(savePath) 
-      }))
-      // res.redirect('/')
-      res.send(`<script>alert('files uploaded !..');window.location.href = "/";</script>`);
-    }catch(nullError){
-      // console.log(nullError);
-      console.log("SomeError ..."); // added for log
-      res.redirect('/')
-    }
-  }
-})
-
-//old_CODE
-// directory listing
-// app.use(express.static(__dirname + "/"))
-// app.use('/upload',checkAuthenticated,serveIndex(__dirname + '/upload'));
-
-//// NEW BLOCK
-// directory listing
-app.get('/upload',checkAuthenticated, (req, res) => {
-  var directoryPath = path.join(__dirname, 'upload');
-  fs.readdir(directoryPath, function (err, files) {
-    if (err) {
-        console.log(`no such file or directory`);
-        res.status(500).send(`<h1><center>500 Error<br>Upload path not found !.</center></h1>`);
-    }
-    if (files == 0) {
-      res.send('its empty, please upload some files')
-    } else {
-      res.send(files)
-    }
-    // res.send(files)
-    // console.log(req.method,res.statusCode,req.url); // added for log
-    try{
-      files.forEach(function (file) {
-        console.log(req.method,res.statusCode,req.url,file); // added for log
-      });
-    }catch(e){
-      console.log(`upload path not found ! ...`);
-    }
-  })
 });
 
+// aws-s3 directory listing ...
+app.get('/upload',checkAuthenticated,(req,res)=>{
+  try{
+    const s3Urls = [];
+    const bucketName = 'ultr0n-b0t'
+    const params = {
+      Bucket: 'ultr0n-b0t'
+    };
+    s3.listObjects(params, function(err, data) {
+      if (err) {
+        console.log(err);
+      } else {
+        data.Contents.forEach((file)=>{
+          const url = s3.getSignedUrl('getObject', {
+            Bucket: bucketName,
+            Key: file.Key,
+          });
+          const fileUrl = `https://s3.amazonaws.com/${bucketName}/${file.Key}`;
+          s3Urls.push(`${fileUrl}`)
+        });
+      }if (s3Urls.length == 0) {
+        res.status(200).json({
+          statusCode : `${res.statusCode}`,
+          message:"no data"
+        });
+      }else{
+        res.send(s3Urls);
+      }
+    });
+  }catch(error){
+    console.log(error);
+    res.status(500).send(`<h1><center>500 Error</center></h1>`);
+  }
+})
 
 //
 app.get('/register', checkNotAuthenticated, (req, res) => {
-  res.render('register.ejs')
-  // console.log(req.method,res.statusCode,req.url); // added for log
+  try {
+    res.render('register.ejs')
+  } catch (error){
+    console.log(error)
+    res.status(500).send(`<h1><center>500 Error</center></h1>`);
+  }
 })
 
 // without db
@@ -165,25 +176,15 @@ app.post('/register', checkNotAuthenticated, async (req, res) => {
   } catch {
     res.redirect('/register')
   }
-  console.log(users) // added for log.. (it show's users details in console)
-  // console.table(users) // added for log.. (it show's users details in console)
 })
 
-// old delete req..
-// app.delete('/logout', (req, res) => {
-//   req.logOut()
-//   res.redirect('/login')
-//   console.log(req.method,res.statusCode,req.url); // added for log
-// })
-
-// patch for delete req...
+// patch delete req...
 app.delete('/logout', function(req, res, next) {
   req.logout(function(err) {
     if (err) {
       return next(err);
     }
     res.redirect('/');
-    // console.log(req.method,res.statusCode,req.url); // added for log
   });
 });
 
@@ -207,17 +208,19 @@ app.get('/robots.txt',(req,res)=>{
 
 // 404 Page Not Found
 app.use((req,res)=>{
-  res.status(404).render('404.ejs');
-  // console.log(req.method,res.statusCode,req.url); // added for log
+  try{
+    res.status(404).render('404.ejs');
+  }catch(error){
+    console.log(error)
+    res.status(500).send(`<h1><center>500 Error</center></h1>`);
+  }
 });
 
 //listening
 const port = process.env.PORT || 8000;
 app.listen(port,()=>{
-	console.log(`local server listen on port ${port}
-http://127.0.0.1:${port}`)
-  console.log(`ReverseProxy listen on port 8800
-http://127.0.0.1:${port}`)
+  console.log(`local server listen on port ${port}`)
+  console.log(`ReverseProxy listen on port 8800`)
 })
 
 
