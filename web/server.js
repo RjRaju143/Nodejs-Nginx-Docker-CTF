@@ -99,7 +99,7 @@ app.post('/', uploadFile.single('file'), (req, res) => {
     let now = new Date();
     const fileName = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}`
     const params = {
-        Bucket: 'ultr0n-b0t',
+        Bucket: 'ultr0n',
         Key: `${fileName}-${file.originalname}`,
         Body: file.buffer
     };
@@ -108,7 +108,9 @@ app.post('/', uploadFile.single('file'), (req, res) => {
             console.log(err);
             res.status(500).send(`<h1><center>500 Error</center></h1>`);
         } else {
-            res.status(200).redirect('/');
+            // res.status(200).redirect('/');
+            res.status(200).send('<script>alert("upload successful");window.location.href = "http://localhost:8000";</script>');
+            // res.status(200).send('<script>alert("uploaded")</script>');
         }
     });
   }catch(error){
@@ -121,9 +123,10 @@ app.post('/', uploadFile.single('file'), (req, res) => {
 app.get('/upload',checkAuthenticated,(req,res)=>{
   try{
     const s3Urls = [];
-    const bucketName = 'ultr0n-b0t'
+    const filesNames = []
+    const bucketName = 'ultr0n'
     const params = {
-      Bucket: 'ultr0n-b0t'
+      Bucket: 'ultr0n'
     };
     s3.listObjects(params, function(err, data) {
       if (err) {
@@ -135,15 +138,17 @@ app.get('/upload',checkAuthenticated,(req,res)=>{
             Key: file.Key,
           });
           const fileUrl = `https://s3.amazonaws.com/${bucketName}/${file.Key}`;
+          const fileImageName = `${file.Key}`;
           s3Urls.push(`${fileUrl}`)
+          filesNames.push(`${fileImageName}`)
         });
       }if (s3Urls.length == 0) {
         res.status(200).json({
-          statusCode : `${res.statusCode}`,
-          message:"no data"
+          status : `${res.statusCode}`,
+          message:"No data"
         });
       }else{
-        res.send(s3Urls);
+        res.json([{"filesNames":filesNames},{"url":s3Urls}]);
       }
     });
   }catch(error){
