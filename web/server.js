@@ -111,6 +111,7 @@ app.post('/', uploadFile.single('file'), (req, res) => {
             // res.status(200).redirect('/');
             res.status(200).send('<script>alert("upload successful");window.location.href = "http://localhost:8000";</script>');
             // res.status(200).send('<script>alert("uploaded")</script>');
+            console.log(file)
         }
     });
   }catch(error){
@@ -120,7 +121,7 @@ app.post('/', uploadFile.single('file'), (req, res) => {
 });
 
 // aws-s3 directory listing ...
-app.get('/upload',checkAuthenticated,(req,res)=>{
+app.get('/upload',/*checkAuthenticated,*/(req,res)=>{
   try{
     const s3Urls = [];
     const filesNames = []
