@@ -149,7 +149,8 @@ app.get('/upload',/*checkAuthenticated,*/(req,res)=>{
           message:"No data"
         });
       }else{
-        res.json([{"filesNames":filesNames},{"url":s3Urls}]);
+        const output = Object.fromEntries(filesNames.map((key, i) => [key, s3Urls[i]]));
+        res.json(output)
       }
     });
   }catch(error){
