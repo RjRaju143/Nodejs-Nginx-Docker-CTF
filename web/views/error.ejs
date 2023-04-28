@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+
+<style>
+    .page_error{ padding:40px 0; background:#fff; font-family: 'Arvo', serif;
+    }
+    
+    .page_error  img{ width:100%;}
+    
+    .four_zero_four_bg{
+
+     background-image: url('../public/img/dribbble_1.gif');
+     background-repeat: no-repeat;
+        height: 400px;
+        background-position: center;
+     }
+     
+     
+     .four_zero_four_bg h1{
+     font-size:80px;
+     }
+     
+      .four_zero_four_bg h3{
+                 font-size:80px;
+                 }
+                 
+                 .link_error{			 
+        color: #ffffff!important;
+        padding: 10px 20px;
+        background: #e44b4b;
+        margin: 20px 0;
+        text-decoration: none;
+        display: inline-block;}
+        .contant_box_error{ margin-top:-50px;}
+    
+    </style>
+</head>
+<body>
+    
+
+<center>
+    <section class="page_error">
+        <div class="container">
+            <div class="row">	
+            <div class="col-sm-12 ">
+            <div class="col-sm-10 col-sm-offset-1  text-center">
+            <div class="four_zero_four_bg">
+                <h1 class="text-center "><%= errorcode %></h1>
+            
+            
+            </div>
+            
+            <div class="contant_box_error">
+            <h3 class="h2">
+            Look like you're lost
+            </h3>
+            <p><%= errormessage %></p>
+            
+            <a href="/" class="link_error">Go to Home</a>
+        </div>
+            </div>
+            </div>
+            </div>
+        </div>
+    </section>
+    </center>
+    
+</body>
+</html>
+

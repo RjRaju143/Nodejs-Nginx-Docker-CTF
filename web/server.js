@@ -24,8 +24,45 @@ AWS.config.update({
 var s3 = new AWS.S3();
 
 //debug & logs
-const logger = require('morgan');
-app.use(logger('dev'));
+// const logger = require('morgan');
+// app.use(logger('dev'));
+
+//// Loggers...
+const { createLogger, format, transports } = require('winston');
+const logger = createLogger({
+  level: 'info',
+  format: format.combine(
+    format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    format.errors({ stack: true }),
+    format.json()
+  ),
+  transports: [
+    new transports.File({
+      filename: path.join(__dirname, 'logs', 'error.log'),
+      level: 'error'
+    }),
+    new transports.File({
+      filename: path.join(__dirname, 'logs', 'combined.log'),
+      level: 'info'
+    }),
+    new transports.Console(),
+  ]
+});
+
+// Error handler middleware
+app.use((err, req, res, next) => {
+  logger.error(`${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+  // res.status(err.status || 500).send('Internal Server Error');
+});
+
+// Middleware function to log all requests
+app.use((req, res, next) => {
+  logger.info(`${req.method} - ${req.originalUrl} - ${req.ip}`);
+  next();
+});
+
+
+////////////
 
 // Configure view engine and set views folder
 app.set('view engine', 'ejs')
@@ -56,41 +93,61 @@ app.use(passport.session())
 app.use(methodOverride('_method'))
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/', checkAuthenticated, (req, res) => {
-  try{
-    res.render('index.ejs', {
+app.get("/", checkAuthenticated, (req, res) => {
+  res.render(
+    "index.ejs",
+    {
       name: req.user.name,
-      uploadstatus : "upload success"
-    })
-  }catch(error){
-    console.log(error);
-    res.status(500).send(`<h1><center>500 Error</center></h1>`);
-  }
-})
+      // uploadstatus: "upload success",
+    },
+    (err, html) => {
+      if (err) {
+        logger.error(err);
+        res.status(500).render("error", {
+          errorcode: "500 Error",
+          errormessage: "Internal Server Error",
+        });
+      } else {
+        res.status(200).send(html);
+      }
+    }
+  );
+});
 
-app.get('/login', checkNotAuthenticated, (req, res) => {
-  try {
-    res.render('login.ejs')
-  } catch (error) {
-    console.log(error);
-    res.status(500).send(`<h1><center>500 Error</center></h1>`);
-  }
-})
+app.get("/login", checkNotAuthenticated, (req, res) => {
+  res.render("login", (err, html) => {
+    if (err) {
+      logger.error(err);
+      res.status(500).render("error", {
+        errorcode: "500 Error",
+        errormessage: "Internal Server Error",
+      });
+    } else {
+      res.status(200).send(html);
+    }
+  });
+});
+
 app.post('/login', checkNotAuthenticated, passport.authenticate('local', {
   successRedirect: '/',
   failureRedirect: '/login',
   failureFlash: true
 }))
 
-// source path
-app.get('/source',checkAuthenticated, (req, res) => {
+//// source path
+app.get("/source", checkAuthenticated, (req, res) => {
   try {
-    res.render('source.ejs',{output: req.query.name});
-  } catch (error) {
-    console.log(error);
-    res.status(500).send(`<h1><center>500 Error</center></h1>`);
+    res.render("source.ejs", { output: req.query.name });
+    logger.info(req.method, res.statusCode, req.url, req.query.name); // added for log
+  } catch (err) {
+    logger.error(err);
+    res.render("error", {
+      errorcode: "500 Error",
+      errormessage: "Internal Server Error",
+    });
   }
-})
+});
+
 
 //// upload the file to S3
 app.post('/', uploadFile.single('file'), (req, res) => {
@@ -105,18 +162,28 @@ app.post('/', uploadFile.single('file'), (req, res) => {
     };
     s3.upload(params, (err, data) => {
         if (err) {
-            console.log(err);
-            res.status(500).send(`<h1><center>500 Error</center></h1>`);
+            logger.error(err);
+            res.status(500).render('error.ejs',{
+              errorcode: "500 Error",
+              errormessage: "Internal Server Error"
+            });
         } else {
             // res.status(200).redirect('/');
-            res.status(200).send('<script>alert("upload successful");window.location.href = "http://localhost:8000";</script>');
+            res.status(200).render('index',{
+              name: req.user.name,
+              successupload:`upload success`
+            });
             // res.status(200).send('<script>alert("uploaded")</script>');
-            console.log(file)
+            // logger.info(file)
+            logger.info(file)
         }
     });
   }catch(error){
-    console.log(error);
-    res.redirect('/');
+    logger.error(error);
+    res.render("index", {
+      name: req.user.name,
+      uploadstatus: "please upload some files. ",
+    });
   }
 });
 
@@ -131,7 +198,7 @@ app.get('/upload',checkAuthenticated,(req,res)=>{
     };
     s3.listObjects(params, function(err, data) {
       if (err) {
-        console.log(err);
+        logger.error(err);
       } else {
         data.Contents.forEach((file)=>{
           const url = s3.getSignedUrl('getObject', {
@@ -154,20 +221,27 @@ app.get('/upload',checkAuthenticated,(req,res)=>{
       }
     });
   }catch(error){
-    console.log(error);
-    res.status(500).send(`<h1><center>500 Error</center></h1>`);
+    logger.error(error);
+    res.status(500).render('error.ejs',{
+      errorcode: "500 Error",
+      errormessage: "Internal Server Error",
+    });
   }
 })
 
-//
-app.get('/register', checkNotAuthenticated, (req, res) => {
-  try {
-    res.render('register.ejs')
-  } catch (error){
-    console.log(error)
-    res.status(500).send(`<h1><center>500 Error</center></h1>`);
-  }
-})
+app.get("/register", checkNotAuthenticated, (req, res) => {
+  res.status(200).render("register.ejs", (err, html) => {
+    if (err) {
+      loggger.error(err);
+      res.render("error", {
+        errorcode: "500 Error",
+        errormessage: `Internal Server Error`,
+      });
+    } else {
+      res.status(200).send(html);
+    }
+  });
+});
 
 // without db
 app.post('/register', checkNotAuthenticated, async (req, res) => {
@@ -179,9 +253,9 @@ app.post('/register', checkNotAuthenticated, async (req, res) => {
       email: req.body.email,
       password: hashedPassword
     })
-    res.redirect('/login')
+    res.status(302).redirect('/login')
   } catch {
-    res.redirect('/register')
+    res.status(302).redirect('/register')
   }
 })
 
@@ -191,7 +265,7 @@ app.delete('/logout', function(req, res, next) {
     if (err) {
       return next(err);
     }
-    res.redirect('/');
+    res.status(302).redirect('/');
   });
 });
 
@@ -199,11 +273,11 @@ function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next()
   }
-  res.redirect('/login')
+  res.status(302).redirect('/login')
 }
 function checkNotAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
-    return res.redirect('/')
+    return res.status(302).redirect('/')
   }
   next()
 }
@@ -216,10 +290,16 @@ app.get('/robots.txt',(req,res)=>{
 // 404 Page Not Found
 app.use((req,res)=>{
   try{
-    res.status(404).render('404.ejs');
+    res.status(404).render('error.ejs',{
+      errorcode: "404 Error",
+      errormessage: "Internal Server Error",
+    });
   }catch(error){
-    console.log(error)
-    res.status(500).send(`<h1><center>500 Error</center></h1>`);
+    logger.info(error)
+    res.status(500).render('error.ejs',{
+      errorcode: "500 Error",
+      errormessage: "Internal Server Error",
+    });
   }
 });
 
