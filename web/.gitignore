@@ -3,3 +3,4 @@ testFile.txt
 dev.log
 upload
 .env
+*logs*

@@ -99,7 +99,7 @@ app.post('/', uploadFile.single('file'), (req, res) => {
     let now = new Date();
     const fileName = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}`
     const params = {
-        Bucket: 'ultr0n',
+        Bucket: 'ultronbot',
         Key: `${fileName}-${file.originalname}`,
         Body: file.buffer
     };
@@ -121,13 +121,13 @@ app.post('/', uploadFile.single('file'), (req, res) => {
 });
 
 // aws-s3 directory listing ...
-app.get('/upload',/*checkAuthenticated,*/(req,res)=>{
+app.get('/upload',checkAuthenticated,(req,res)=>{
   try{
     const s3Urls = [];
     const filesNames = []
-    const bucketName = 'ultr0n'
+    const bucketName = 'ultronbot'
     const params = {
-      Bucket: 'ultr0n'
+      Bucket: 'ultronbot'
     };
     s3.listObjects(params, function(err, data) {
       if (err) {
