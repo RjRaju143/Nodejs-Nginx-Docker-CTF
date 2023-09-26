@@ -37,4 +37,3 @@ logs path /home/onmyway/Desktop/OS/Docker-CTF_DEV/log
 
 - `http://localhost:8800`
 
-* NOTE : __[ This is a CTF-Web Application Under developing ... ]__
